@@ -10,8 +10,17 @@ import { useUserStoreHook } from "@/store/modules/user";
 import { initRouter, getTopMenu } from "@/router/utils";
 import { bg, avatar, illustration } from "./utils/static";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
-import { ref, reactive, toRaw, onMounted, onBeforeUnmount } from "vue";
+import {
+  ref,
+  reactive,
+  toRaw,
+  onMounted,
+  onBeforeUnmount,
+  watch,
+  computed
+} from "vue";
 import { useDataThemeChange } from "@/layout/hooks/useDataThemeChange";
+import { ReImageVerify } from "@/components/ReImageVerify";
 
 import dayIcon from "@/assets/svg/day.svg?component";
 import darkIcon from "@/assets/svg/dark.svg?component";
@@ -23,7 +32,11 @@ defineOptions({
 });
 const router = useRouter();
 const loading = ref(false);
+const imgCode = ref("");
 const ruleFormRef = ref<FormInstance>();
+const currentPage = computed(() => {
+  return useUserStoreHook().currentPage;
+});
 
 const { initStorage } = useLayout();
 initStorage();
@@ -34,7 +47,8 @@ const { title } = useNav();
 
 const ruleForm = reactive({
   username: "admin",
-  password: "admin123"
+  password: "admin123",
+  verifyCode: ""
 });
 
 const onLogin = async (formEl: FormInstance | undefined) => {
@@ -74,6 +88,10 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.document.removeEventListener("keypress", onkeypress);
 });
+
+watch(imgCode, value => {
+  useUserStoreHook().SET_VERIFYCODE(value);
+});
 </script>
 
 <template>
@@ -101,6 +119,7 @@ onBeforeUnmount(() => {
           </Motion>
 
           <el-form
+            v-if="currentPage === 0"
             ref="ruleFormRef"
             :model="ruleForm"
             :rules="loginRules"
@@ -135,6 +154,21 @@ onBeforeUnmount(() => {
                   placeholder="密码"
                   :prefix-icon="useRenderIcon(Lock)"
                 />
+              </el-form-item>
+            </Motion>
+
+            <Motion :delay="200">
+              <el-form-item prop="verifyCode">
+                <el-input
+                  clearable
+                  v-model="ruleForm.verifyCode"
+                  placeholder="验证码"
+                  :prefix-icon="useRenderIcon('ri:shield-keyhole-line')"
+                >
+                  <template v-slot:append>
+                    <ReImageVerify v-model:code="imgCode" />
+                  </template>
+                </el-input>
               </el-form-item>
             </Motion>
 
